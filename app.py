@@ -1,0 +1,137 @@
+import random
+from flask import Flask, render_template, request, session, redirect, url_for
+from database import get_db, close_db, init_db
+
+app = Flask(__name__)
+app.secret_key = "xingce-practice-secret-key-2024"
+app.teardown_appcontext(close_db)
+
+QUESTIONS_PER_ROUND = 5
+
+
+@app.route("/")
+def index():
+    """首页：开始新一轮刷题"""
+    db = get_db()
+    all_ids = [row["id"] for row in db.execute("SELECT id FROM questions").fetchall()]
+
+    if len(all_ids) < QUESTIONS_PER_ROUND:
+        return "题库题目不足，请联系管理员添加题目。"
+
+    selected_ids = random.sample(all_ids, QUESTIONS_PER_ROUND)
+    questions = []
+    for qid in selected_ids:
+        row = db.execute("SELECT * FROM questions WHERE id = ?", (qid,)).fetchone()
+        questions.append(dict(row))
+
+    session["questions"] = questions
+    session["current_index"] = 0
+    session["answers"] = {}
+
+    return redirect(url_for("question", qindex=1))
+
+
+@app.route("/question/<int:qindex>")
+def question(qindex):
+    """显示第 qindex 道题（1-based）"""
+    questions = session.get("questions", [])
+    if not questions or qindex < 1 or qindex > len(questions):
+        return redirect(url_for("index"))
+
+    current_q = questions[qindex - 1]
+    session["current_index"] = qindex - 1
+
+    is_last = (qindex == len(questions))
+    return render_template(
+        "question.html",
+        question=current_q,
+        qindex=qindex,
+        total=len(questions),
+        is_last=is_last,
+        selected_answer=session["answers"].get(str(current_q["id"]), "")
+    )
+
+
+@app.route("/submit", methods=["POST"])
+def submit():
+    """提交当前题目的答案"""
+    questions = session.get("questions", [])
+    current_index = session.get("current_index", 0)
+
+    if not questions or current_index >= len(questions):
+        return redirect(url_for("index"))
+
+    qid = str(questions[current_index]["id"])
+    user_answer = request.form.get("answer", "")
+    action = request.form.get("action", "next")
+
+    if user_answer:
+        session["answers"][qid] = user_answer
+        db = get_db()
+        correct = questions[current_index]["correct_answer"]
+        db.execute(
+            "INSERT INTO answers (question_id, user_answer, is_correct) VALUES (?, ?, ?)",
+            (int(qid), user_answer, 1 if user_answer == correct else 0)
+        )
+        db.commit()
+
+    if action == "finish" or current_index + 1 >= len(questions):
+        return redirect(url_for("result"))
+    else:
+        return redirect(url_for("question", qindex=current_index + 2))
+
+
+@app.route("/result")
+def result():
+    """显示本轮答题结果"""
+    questions = session.get("questions", [])
+    answers = session.get("answers", {})
+
+    if not questions:
+        return redirect(url_for("index"))
+
+    correct_count = 0
+    results = []
+    for q in questions:
+        qid = str(q["id"])
+        user_ans = answers.get(qid, "未作答")
+        is_correct = user_ans == q["correct_answer"]
+        if is_correct:
+            correct_count += 1
+        results.append({
+            "question": q,
+            "user_answer": user_ans,
+            "is_correct": is_correct
+        })
+
+    total = len(questions)
+    score = round(correct_count / total * 100, 1)
+
+    return render_template(
+        "result.html",
+        results=results,
+        correct_count=correct_count,
+        total=total,
+        score=score
+    )
+
+
+@app.route("/wrong")
+def wrong():
+    """查看所有错题"""
+    db = get_db()
+    rows = db.execute("""
+        SELECT DISTINCT q.*, a.user_answer, a.created_at
+        FROM answers a
+        JOIN questions q ON a.question_id = q.id
+        WHERE a.is_correct = 0
+        ORDER BY a.created_at DESC
+    """).fetchall()
+
+    wrong_list = [dict(row) for row in rows]
+    return render_template("wrong.html", wrong_list=wrong_list)
+
+
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True, port=5000)

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="result-container">
+  <h1>答题结果</h1>
+  <div class="score-ring">
+    <span class="score-number">{{ correct_count }}/{{ total }}</span>
+    <span class="score-percent">{{ score }}%</span>
+  </div>
+
+  <div class="detail-list">
+    {% for r in results %}
+    <div class="detail-item {% if r.is_correct %}correct{% else %}wrong{% endif %}">
+      <div class="detail-status">{{ '✓' if r.is_correct else '✗' }}</div>
+      <div class="detail-body">
+        <div class="detail-question">{{ r.question.question_text | replace('\n', '<br>') | safe | truncate(80) }}</div>
+        <div class="detail-info">
+          你的答案：<strong>{{ r.user_answer }}</strong>
+          {% if not r.is_correct %}
+          | 正确答案：<strong>{{ r.question.correct_answer }}</strong>
+          {% endif %}
+        </div>
+        {% if not r.is_correct and r.question.explanation %}
+        <div class="detail-explanation">{{ r.question.explanation }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="result-actions">
+    <a href="{{ url_for('index') }}" class="btn btn-primary">再来一轮</a>
+    <a href="{{ url_for('wrong') }}" class="btn btn-secondary">查看错题本</a>
+  </div>
+</div>
+{% endblock %}

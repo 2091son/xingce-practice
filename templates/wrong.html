@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrong-container">
+  <h1>错题本</h1>
+
+  {% if wrong_list %}
+  <p class="wrong-count">共 {{ wrong_list | length }} 道错题</p>
+  <div class="detail-list">
+    {% for w in wrong_list %}
+    <div class="detail-item wrong">
+      <div class="detail-status">✗</div>
+      <div class="detail-body">
+        <div class="detail-question">{{ w.question_text | replace('\n', '<br>') | safe }}</div>
+        <div class="detail-info">
+          你的答案：<strong>{{ w.user_answer }}</strong>
+          | 正确答案：<strong>{{ w.correct_answer }}</strong>
+          <span class="category-tag">{{ w.category }}</span>
+        </div>
+        {% if w.explanation %}
+        <div class="detail-explanation">{{ w.explanation }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>还没有错题，继续保持！</p>
+  </div>
+  {% endif %}
+
+  <div class="result-actions">
+    <a href="{{ url_for('index') }}" class="btn btn-primary">开始刷题</a>
+  </div>
+</div>
+{% endblock %}
