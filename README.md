@@ -22,3 +22,11 @@ python app.py
 
 然后访问 http://127.0.0.1:5000
 在线体验：https://你的用户名.pythonanywhere.com
+
+## 页面展示
+
+![首页](static/screenshot1.png)
+
+![刷题](static/screenshot2.png)
+
+![结果](static/screenshot3.png)

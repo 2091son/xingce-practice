@@ -13,7 +13,10 @@
     <a href="{{ url_for('index') }}">新一轮</a>
     <a href="{{ url_for('stats') }}">历史成绩</a>
     <a href="{{ url_for('wrong') }}">错题本</a>
-
+    {% if session.username %}
+    <span style="margin-left:auto;color:#888">{{ session.username }}</span>
+    <a href="{{ url_for('logout') }}">退出</a>
+    {% endif %}
   </nav>
   <main>
     {% block content %}{% endblock %}

@@ -2,6 +2,8 @@ import sqlite3
 import os
 
 DATABASE = os.path.join(os.path.dirname(__file__), "xingce.db")
+
+
 def get_db():
     """获取数据库连接（每次请求用同一个连接）"""
     import flask
@@ -17,12 +19,13 @@ def close_db(exception=None):
     db = flask.g.pop("db", None)
     if db is not None:
         db.close()
+
+
 def init_db():
     """创建表并插入示例题目"""
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
-    # 题目表
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS questions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,10 +40,10 @@ def init_db():
         )
     """)
 
-    # 答题记录表
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS answers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL DEFAULT 1,
             question_id INTEGER NOT NULL,
             user_answer TEXT NOT NULL,
             is_correct INTEGER NOT NULL,
@@ -48,7 +51,16 @@ def init_db():
             FOREIGN KEY (question_id) REFERENCES questions(id)
         )
     """)
-        # 检查是否已有数据，没有就插入
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     cursor.execute("SELECT COUNT(*) FROM questions")
     if cursor.fetchone()[0] == 0:
         sample_questions = [
@@ -93,3 +105,7 @@ def init_db():
     conn.commit()
     conn.close()
     print("数据库初始化完成！")
+
+
+if __name__ == "__main__":
+    init_db()
