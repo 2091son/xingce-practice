@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="question-container">
+  <h1>行测刷题</h1>
+  <p style="color: #888; margin-bottom: 28px;">选择模块和题量，开始练习</p>
+
+  <form method="POST">
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 8px;">选择模块</label>
+      <select name="category"
+        style="width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 15px;">
+        <option value="全部">全部模块</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}">{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="margin-bottom: 28px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 8px;">题目数量</label>
+      <select name="num_questions"
+        style="width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 15px;">
+        <option value="5">5 题</option>
+        <option value="10">10 题</option>
+        <option value="15">15 题</option>
+        <option value="20">20 题</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn btn-primary">开始刷题</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

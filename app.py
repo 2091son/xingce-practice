@@ -9,27 +9,53 @@ app.teardown_appcontext(close_db)
 QUESTIONS_PER_ROUND = 5
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
-    """首页：开始新一轮刷题"""
+    """首页：选择类别和题量，开始刷题"""
     db = get_db()
-    all_ids = [row["id"] for row in db.execute("SELECT id FROM questions").fetchall()]
 
-    if len(all_ids) < QUESTIONS_PER_ROUND:
-        return "题库题目不足，请联系管理员添加题目。"
+    # 获取所有类别
+    categories = [
+        row["category"]
+        for row in db.execute("SELECT DISTINCT category FROM questions").fetchall()
+    ]
 
-    selected_ids = random.sample(all_ids, QUESTIONS_PER_ROUND)
-    questions = []
-    for qid in selected_ids:
-        row = db.execute("SELECT * FROM questions WHERE id = ?", (qid,)).fetchone()
-        questions.append(dict(row))
+    if request.method == "POST":
+        selected_category = request.form.get("category", "全部")
+        try:
+            num_questions = int(request.form.get("num_questions", 5))
+        except ValueError:
+            num_questions = 5
 
-    session["questions"] = questions
-    session["current_index"] = 0
-    session["answers"] = {}
+        # 根据类别筛选题目
+        if selected_category == "全部":
+            rows = db.execute("SELECT id FROM questions").fetchall()
+        else:
+            rows = db.execute(
+                "SELECT id FROM questions WHERE category = ?", (selected_category,)
+            ).fetchall()
 
-    return redirect(url_for("question", qindex=1))
+        all_ids = [row["id"] for row in rows]
 
+        if len(all_ids) < num_questions:
+            return "题库题目不足，请选择更少的题量或联系管理员添加题目。"
+
+        selected_ids = random.sample(all_ids, num_questions)
+        questions = []
+        for qid in selected_ids:
+            row = db.execute(
+                "SELECT * FROM questions WHERE id = ?", (qid,)
+            ).fetchone()
+            questions.append(dict(row))
+
+        session["questions"] = questions
+        session["current_index"] = 0
+        session["answers"] = {}
+
+        return redirect(url_for("question", qindex=1))
+
+    # GET 请求：显示选择页面
+    return render_template("index.html", categories=categories)
 
 @app.route("/question/<int:qindex>")
 def question(qindex):
