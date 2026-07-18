@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="result-container">
+  <h1>历史成绩</h1>
+
+  <div class="score-ring">
+    <span class="score-number">{{ correct }}/{{ total }}</span>
+    <span class="score-percent">正确率 {{ accuracy }}%</span>
+  </div>
+
+  {% if cat_list %}
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+    <thead>
+      <tr style="border-bottom: 2px solid #e0e0e0;">
+        <th style="text-align: left; padding: 10px 8px;">模块</th>
+        <th style="text-align: center; padding: 10px 8px;">答题数</th>
+        <th style="text-align: center; padding: 10px 8px;">正确数</th>
+        <th style="text-align: center; padding: 10px 8px;">正确率</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cat_list %}
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 10px 8px;">{{ c.category }}</td>
+        <td style="text-align: center; padding: 10px 8px;">{{ c.total }}</td>
+        <td style="text-align: center; padding: 10px 8px;">{{ c.correct }}</td>
+        <td style="text-align: center; padding: 10px 8px;">{{ c.accuracy }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <p>还没有答题记录，快去刷题吧</p>
+  </div>
+  {% endif %}
+
+  <div class="result-actions">
+    <a href="{{ url_for('index') }}" class="btn btn-primary">开始刷题</a>
+  </div>
+</div>
+{% endblock %}

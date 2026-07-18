@@ -157,7 +157,50 @@ def wrong():
     wrong_list = [dict(row) for row in rows]
     return render_template("wrong.html", wrong_list=wrong_list)
 
+@app.route("/stats")
+def stats():
+    """历史成绩统计页"""
+    db = get_db()
 
+    # 总答题数和正确率
+    row = db.execute("""
+        SELECT COUNT(*) AS total,
+               SUM(is_correct) AS correct
+        FROM answers
+    """).fetchone()
+    total = row["total"] or 0
+    correct = row["correct"] or 0
+    accuracy = round(correct / total * 100, 1) if total > 0 else 0
+
+    # 各模块正确率
+    category_stats = db.execute("""
+        SELECT q.category,
+               COUNT(*) AS total,
+               SUM(a.is_correct) AS correct
+        FROM answers a
+        JOIN questions q ON a.question_id = q.id
+        GROUP BY q.category
+        ORDER BY q.category
+    """).fetchall()
+
+    cat_list = []
+    for row in category_stats:
+        t = row["total"]
+        c = row["correct"] or 0
+        cat_list.append({
+            "category": row["category"],
+            "total": t,
+            "correct": c,
+            "accuracy": round(c / t * 100, 1)
+        })
+
+    return render_template(
+        "stats.html",
+        total=total,
+        correct=correct,
+        accuracy=accuracy,
+        cat_list=cat_list
+    )
 if __name__ == "__main__":
     init_db()
     app.run(debug=True, port=5000)
