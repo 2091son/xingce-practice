@@ -21,3 +21,4 @@ pip install flask
 python app.py
 
 然后访问 http://127.0.0.1:5000
+在线体验：https://你的用户名.pythonanywhere.com
